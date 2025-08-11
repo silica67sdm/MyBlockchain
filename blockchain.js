@@ -16,7 +16,7 @@ class Block {
 	}
 
 	mine(difficulty) {
-		while (this.hash.startsWith(Array(difficulty + 1).join('0'))) {
+		while (!this.hash.startsWith(Array(difficulty + 1).join('0'))) {
 			this.nonce += 1;
 			this.hash = this.getHash();
 		}
@@ -24,4 +24,7 @@ class Block {
 }
 
 const block1 = new Block(['Transaction 1']);
+console.log(block1);
+
+block1.mine(5);
 console.log(block1);

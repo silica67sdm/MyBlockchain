@@ -47,6 +47,21 @@ class Blockchain {
 		this.transactions = [];
 	}
 
+	getBalance (address) {
+		let balance = 0;
+
+		this.chain.forEach(block => {
+			block.data.forEach(transaction => {
+				if (transaction.from === address) {
+					balance -= transaction.amount;
+				} else if (transaction.to === address) {
+					balance += transaction.amount;
+				}
+			})
+		})
+		return balance;
+	}
+
 	getLastBlock() {
 		return this.chain[this.chain.length - 1];
 	}

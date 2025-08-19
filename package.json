@@ -1,0 +1,16 @@
+{
+  "name": "myblockchain",
+  "version": "1.0.0",
+  "description": "This project is a simple implementation of a decentralized cryptocurrency, inspired by Bitcoin. It focuses on creating a peer-to-peer transaction network using blockchain technology.",
+  "main": "blockchain.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bip39": "^3.1.0",
+    "elliptic": "^6.6.1"
+  }
+}

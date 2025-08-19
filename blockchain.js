@@ -92,15 +92,18 @@ const MINER_WALLET = ec.genKeyPair();
 
 const MyBlockChain = new Blockchain();
 
-const transaction = new Transaction(JOHN_WALLET.getPublic('hex'), JENIFER_WALLET.getPrivate('hex'), 100);
-// transaction.sign(JOHN_WALLET);
+const transaction = new Transaction(JOHN_WALLET.getPublic('hex'), JENIFER_WALLET.getPublic('hex'), 100);
+transaction.sign(JOHN_WALLET);
 
-console.log(MyBlockChain.chain);
-console.log(`JOHN_WALLET public : ${JOHN_WALLET.getPublic('hex')}`)
-console.log(`JOHN_WALLET private : ${JOHN_WALLET.getPrivate('hex')}`)
+MyBlockChain.addTransaction(transaction);
+MyBlockChain.mineTransactions(MINER_WALLET.getPublic('hex'));
+
+console.dir(MyBlockChain.chain, { depth: null, colors: true });
 
 
-
+// console.log(MyBlockChain.chain);
+// console.log(`JOHN_WALLET public : ${JOHN_WALLET.getPublic('hex')}`)
+// console.log(`JOHN_WALLET private : ${JOHN_WALLET.getPrivate('hex')}`)
 
 // const transaction = new Transaction(JOHN_WALLET.getPublic('hex'))
 

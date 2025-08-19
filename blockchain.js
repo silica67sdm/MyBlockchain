@@ -34,7 +34,8 @@ class Block {
 
 class Blockchain {
 	constructor() {
-		this.chain = [new Block(['Genesis Transaction'])];
+		const initialCoinRelease = new Transaction(MINT_PUBLIC_ADDRESS, JOHN_WALLET.getPublic('hex'), 1000);
+		this.chain = [new Block(['Genesis Transaction', initialCoinRelease])];
 		this.difficulty = 2;
 		this.blockTime = 5000;
 		this.transactions = []; // mempool
@@ -50,7 +51,10 @@ class Blockchain {
 
 	mineTransactions(rewardAddress) {
 		const rewardTransaction = new Transaction(MINT_PUBLIC_ADDRESS, rewardAddress, this.reward);
-		this.addBlock(new Block([rewardTransaction, ...this.transactions]));
+
+		if (this.transactions.length !== 0) {
+			this.addBlock(new Block([rewardTransaction, ...this.transactions]));
+		}
 		this.transactions = [];
 	}
 
@@ -126,10 +130,13 @@ const MINER_WALLET = ec.genKeyPair();
 
 const MyBlockChain = new Blockchain();
 
+// create a transaction
 const transaction = new Transaction(JOHN_WALLET.getPublic('hex'), JENIFER_WALLET.getPublic('hex'), 100);
+// Sign the transaction
 transaction.sign(JOHN_WALLET);
-
+// add transaction to mempool
 MyBlockChain.addTransaction(transaction);
+// mine transaction
 MyBlockChain.mineTransactions(MINER_WALLET.getPublic('hex'));
 
 
@@ -138,6 +145,7 @@ MyBlockChain.mineTransactions(MINER_WALLET.getPublic('hex'));
 
 console.dir(MyBlockChain.chain, { depth: null, colors: true });
 
+console.log("John's Balance", MyBlockChain.getBalance(JOHN_WALLET.getPublic('hex')));
 
 // console.log(MyBlockChain.chain);
 // console.log(`JOHN_WALLET public : ${JOHN_WALLET.getPublic('hex')}`)

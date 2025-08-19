@@ -50,7 +50,13 @@ class Blockchain {
 	}
 
 	mineTransactions(rewardAddress) {
-		const rewardTransaction = new Transaction(MINT_PUBLIC_ADDRESS, rewardAddress, this.reward);
+		let totalGasFees = 0;
+
+		this.transactions.forEach(transaction => {
+			totalGasFees += transaction.gas;
+		})
+
+		const rewardTransaction = new Transaction(MINT_PUBLIC_ADDRESS, rewardAddress, this.reward + totalGasFees);
 
 		if (this.transactions.length !== 0) {
 			this.addBlock(new Block([rewardTransaction, ...this.transactions]));
@@ -65,6 +71,7 @@ class Blockchain {
 			block.data.forEach(transaction => {
 				if (transaction.from === address) {
 					balance -= transaction.amount;
+					balance -= transaction.gas;
 				} else if (transaction.to === address) {
 					balance += transaction.amount;
 				}
@@ -101,15 +108,16 @@ class Blockchain {
 }
 
 class Transaction {
-	constructor(from, to, amount) {
+	constructor(from, to, amount, gas = 20) {
 		this.from = from;
 		this.to = to;
 		this.amount = amount;
+		this.gas = gas;
 	}
 
 	sign(keyPair) {
 		if (keyPair.getPublic('hex') === this.from) {
-			this.signature = keyPair.sign(SHA256(this.from + this.to + this.amount)).toDER('hex');
+			this.signature = keyPair.sign(SHA256(this.from + this.to + this.amount + this.gas)).toDER('hex');
 		}
 	}
 
@@ -118,34 +126,39 @@ class Transaction {
 			tx.from &&
 			tx.to &&
 			tx.amount &&
-			chain.getBalance(tx.from) >= tx.amount &&
-			ec.keyFromPublic(tx.from, 'hex').verify(SHA256(tx.from + tx.to + tx.amount), tx.signature)
+			chain.getBalance(tx.from) >= tx.amount + tx.gas &&
+			ec.keyFromPublic(tx.from, 'hex').verify(SHA256(tx.from + tx.to + tx.amount + tx.gas), tx.signature)
 		)
 	}
 }
 
+// init setting
 const JOHN_WALLET = ec.genKeyPair();
 const JENIFER_WALLET = ec.genKeyPair();
 const MINER_WALLET = ec.genKeyPair();
+const BOB_WALLET = ec.genKeyPair();
 
 const MyBlockChain = new Blockchain();
 
-// create a transaction
-const transaction = new Transaction(JOHN_WALLET.getPublic('hex'), JENIFER_WALLET.getPublic('hex'), 100);
-// Sign the transaction
+// John => Jenifer, 200sat, 20sat fee
+const transaction = new Transaction(JOHN_WALLET.getPublic('hex'), JENIFER_WALLET.getPublic('hex'), 200, 20);
 transaction.sign(JOHN_WALLET);
-// add transaction to mempool
 MyBlockChain.addTransaction(transaction);
-// mine transaction
 MyBlockChain.mineTransactions(MINER_WALLET.getPublic('hex'));
 
+// Jenifer => Bob, 100sat, 10sat fee
+const transaction2 = new Transaction(JENIFER_WALLET.getPublic('hex'), BOB_WALLET.getPublic('hex'), 100, 10);
+transaction2.sign(JENIFER_WALLET);
+MyBlockChain.addTransaction(transaction2);
+MyBlockChain.mineTransactions(MINER_WALLET.getPublic('hex'));
 
-
-
-
+// console ledger
 console.dir(MyBlockChain.chain, { depth: null, colors: true });
 
 console.log("John's Balance", MyBlockChain.getBalance(JOHN_WALLET.getPublic('hex')));
+console.log("Jenifer's Balance", MyBlockChain.getBalance(JENIFER_WALLET.getPublic('hex')));
+console.log("Bob's Balance", MyBlockChain.getBalance(BOB_WALLET.getPublic('hex')));
+console.log("Miner's Balance", MyBlockChain.getBalance(MINER_WALLET.getPublic('hex')));
 
 // console.log(MyBlockChain.chain);
 // console.log(`JOHN_WALLET public : ${JOHN_WALLET.getPublic('hex')}`)

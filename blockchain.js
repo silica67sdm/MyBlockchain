@@ -26,6 +26,10 @@ class Block {
 			this.hash = this.getHash();
 		}
 	}
+
+	hasValidTransaction(chain) {
+		return this.data.every(transaction => transaction.isValid(transaction, chain));
+	}
 }
 
 class Blockchain {
@@ -33,12 +37,15 @@ class Blockchain {
 		this.chain = [new Block(['Genesis Transaction'])];
 		this.difficulty = 2;
 		this.blockTime = 5000;
-		this.transactions = [];
+		this.transactions = []; // mempool
 		this.reward = 10;
 	}
 
 	addTransaction(transaction) {
-		this.transactions.push(transaction);
+		// validated by a full node (or by the wallet before broadcasting)
+		if (transaction.isValid(transaction, this)) {
+			this.transactions.push(transaction);
+		}
 	}
 
 	mineTransactions(rewardAddress) {
@@ -79,7 +86,9 @@ class Blockchain {
 			const currentBlock = this.chain[i];
 			const prevBlock = this.chain[i - 1];
 
-			if (currentBlock.hash !== currentBlock.getHash() || currentBlock.prevHash !== prevBlock.hash) {
+			if (currentBlock.hash !== currentBlock.getHash() ||
+				currentBlock.prevHash !== prevBlock.hash ||
+				!currentBlock.hasValidTransaction(this)) {
 				return false;
 			}
 			return true;
@@ -99,6 +108,16 @@ class Transaction {
 			this.signature = keyPair.sign(SHA256(this.from + this.to + this.amount)).toDER('hex');
 		}
 	}
+
+	isValid (tx, chain) {
+		return (
+			tx.from &&
+			tx.to &&
+			tx.amount &&
+			chain.getBalance(tx.from) >= tx.amount &&
+			ec.keyFromPublic(tx.from, 'hex').verify(SHA256(tx.from + tx.to + tx.amount), tx.signature)
+		)
+	}
 }
 
 const JOHN_WALLET = ec.genKeyPair();
@@ -112,6 +131,10 @@ transaction.sign(JOHN_WALLET);
 
 MyBlockChain.addTransaction(transaction);
 MyBlockChain.mineTransactions(MINER_WALLET.getPublic('hex'));
+
+
+
+
 
 console.dir(MyBlockChain.chain, { depth: null, colors: true });
 
